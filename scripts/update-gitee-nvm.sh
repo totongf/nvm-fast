@@ -63,9 +63,10 @@ put_file() {
     local path="$1"
     local file="$2"
     local message="$3"
-    local encoded status sha meta
+    local encoded_file status sha meta
 
-    encoded="$(base64 < "$file" | tr -d '\n')"
+    encoded_file="$tmp_dir/encoded-$(printf '%s' "$path" | tr '/.' '__').txt"
+    base64 < "$file" | tr -d '\n' > "$encoded_file"
     meta="$tmp_dir/meta-$(printf '%s' "$path" | tr '/.' '__').json"
     status="$(
         curl -sS -o "$meta" -w '%{http_code}' \
@@ -77,7 +78,7 @@ put_file() {
         if [ -n "$sha" ]; then
             curl -fsS -X PUT "https://gitee.com/api/v5/repos/$OWNER/$REPO/contents/$path" \
                 --data-urlencode "access_token=$GITEE_TOKEN" \
-                --data-urlencode "content=$encoded" \
+                --data-urlencode "content@$encoded_file" \
                 --data-urlencode "message=$message" \
                 --data-urlencode "branch=$BRANCH" \
                 --data-urlencode "sha=$sha" \
@@ -88,7 +89,7 @@ put_file() {
 
     curl -fsS -X POST "https://gitee.com/api/v5/repos/$OWNER/$REPO/contents/$path" \
         --data-urlencode "access_token=$GITEE_TOKEN" \
-        --data-urlencode "content=$encoded" \
+        --data-urlencode "content@$encoded_file" \
         --data-urlencode "message=$message" \
         --data-urlencode "branch=$BRANCH" \
         >/dev/null
