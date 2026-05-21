@@ -1,0 +1,38 @@
+name: Update Gitee nvm cache
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "25 20 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: update-gitee-nvm-cache
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+      GITEE_OWNER: ${{ vars.GITEE_OWNER || 'totongf' }}
+      GITEE_REPO: ${{ vars.GITEE_REPO || 'nvm-fast' }}
+      GITEE_BRANCH: ${{ vars.GITEE_BRANCH || 'master' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check secret
+        shell: bash
+        run: |
+          if [ -z "${GITEE_TOKEN:-}" ]; then
+            echo "请先在 GitHub 仓库 Settings > Secrets and variables > Actions 中添加 GITEE_TOKEN"
+            exit 1
+          fi
+
+      - name: Update Gitee nvm cache
+        shell: bash
+        run: bash scripts/update-gitee-nvm.sh
